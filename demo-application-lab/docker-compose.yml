@@ -1,0 +1,55 @@
+version: "3.9"
+
+networks:
+  demo_net:
+    name: custom_monitoring_network
+    external: true
+
+services:
+  app1:
+    build: .
+    container_name: demo-app-1
+    environment:
+      APP_NAME: "demo-app-1"
+      HTTPS_PORT: "8443"
+      CERT_CN: "demo-app-1"
+    ports:
+      - "8441:8443" # HTTPS
+      - "9271:9273" # Telegraf /metrics (optional to expose on host)
+    networks: [ demo_net ]
+
+  app2:
+    build: .
+    container_name: demo-app-2
+    environment:
+      APP_NAME: "demo-app-2"
+      HTTPS_PORT: "8443"
+      CERT_CN: "demo-app-2"
+    ports:
+      - "8442:8443"
+      - "9272:9273"
+    networks: [ demo_net ]
+
+  app3:
+    build: .
+    container_name: demo-app-3
+    environment:
+      APP_NAME: "demo-app-3"
+      HTTPS_PORT: "8443"
+      CERT_CN: "demo-app-3"
+    ports:
+      - "8443:8443"
+      - "9273:9273"
+    networks: [ demo_net ]
+
+  app4:
+    build: .
+    container_name: demo-app-4
+    environment:
+      APP_NAME: "demo-app-4"
+      HTTPS_PORT: "8443"
+      CERT_CN: "demo-app-4"
+    ports:
+      - "8444:8443"
+      - "9274:9273"
+    networks: [ demo_net ]
