@@ -16,13 +16,53 @@ cat > /var/www/html/index.html <<EOF
 </html>
 EOF
 
+# Set certificate expiration days based on app name
+case "${APP_NAME}" in
+  "demo-app-1")
+    CERT_DAYS=1
+    ;;
+  "demo-app-2")
+    CERT_DAYS=10
+    ;;
+  "demo-app-3")
+    CERT_DAYS=20
+    ;;
+  "demo-app-4")
+    CERT_DAYS=30
+    ;;
+  *)
+    CERT_DAYS=365  # Default fallback
+    ;;
+esac
+
 # Generate self-signed certificate (persist inside container FS; recreated on rebuild)
 if [[ ! -f "${CERT_DIR}/tls.crt" || ! -f "${CERT_DIR}/tls.key" ]]; then
-  echo "Generating self-signed certificate for CN=${CERT_CN} ..."
-  openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
+  echo "Generating self-signed certificate for CN=${CERT_CN} with ${CERT_DAYS} days expiration..."
+  
+  # Create a config file for the certificate with IP SAN
+  cat > /tmp/cert.conf <<EOF
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = ${CERT_CN}
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ${CERT_CN}
+DNS.2 = localhost
+IP.1 = 127.0.0.1
+EOF
+
+  openssl req -x509 -newkey rsa:2048 -sha256 -days ${CERT_DAYS} -nodes \
     -keyout "${CERT_DIR}/tls.key" \
     -out "${CERT_DIR}/tls.crt" \
-    -subj "/CN=${CERT_CN}"
+    -config /tmp/cert.conf \
+    -extensions v3_req
 fi
 
 # Run nginx (foreground disabled; we background it)
